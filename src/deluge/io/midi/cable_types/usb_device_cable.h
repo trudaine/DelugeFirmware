@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "definitions_cxx.hpp"
 #include "deluge/io/midi/cable_types/usb_common.h"
 
 class MIDICableUSBUpstream final : public MIDICableUSB {
@@ -32,5 +33,7 @@ public:
 	}
 	void writeReferenceAttributesToFile(Serializer& writer) override;
 	void writeToFlash(uint8_t* memory) override;
+	[[nodiscard]] Error sendMessage(MIDIMessage message) override;
 	[[nodiscard]] char const* getDisplayName() const override;
+	[[nodiscard]] size_t sendBufferSpace() const override;
 };
