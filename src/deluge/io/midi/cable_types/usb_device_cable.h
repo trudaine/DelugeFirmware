@@ -32,5 +32,5 @@ public:
 	}
 	void writeReferenceAttributesToFile(Serializer& writer) override;
 	void writeToFlash(uint8_t* memory) override;
-	char const* getDisplayName() override;
+	[[nodiscard]] char const* getDisplayName() const override;
 };
