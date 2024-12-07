@@ -152,7 +152,6 @@ private:
 uint32_t setupUSBMessage(MIDIMessage message);
 
 extern MidiEngine midiEngine;
-extern bool anythingInUSBOutputBuffer;
 
 extern "C" {
 #endif
