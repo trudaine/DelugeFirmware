@@ -114,8 +114,8 @@ void readDevicesFromFile();
 /// or nullptr (representing disconnection).
 void setUSBRoot(MIDIRootComplex* root);
 
-extern DINRootComplex rootDin;
-extern MIDIRootComplex* rootUSB;
+extern DINRootComplex root_din;
+extern gsl::owner<MIDIRootComplex*> root_usb;
 
 MIDIRootComplexUSBHosted* getHosted();
 
