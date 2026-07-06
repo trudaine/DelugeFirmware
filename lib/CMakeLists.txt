@@ -18,7 +18,8 @@ FetchContent_MakeAvailable(etl)
 
 # tinyusb
 FetchContent_Declare(tinyusb
-  URL https://github.com/hathach/tinyusb/archive/refs/tags/0.17.0.tar.gz
+  GIT_REPOSITORY https://github.com/stellar-aria/tinyusb.git
+  GIT_TAG feature/rza1
 )
 
 add_library(tinyusb_config INTERFACE)
@@ -33,6 +34,7 @@ target_sources(tinyusb PRIVATE
     ${tinyusb_SOURCE_DIR}/src/device/usbd.c
     ${tinyusb_SOURCE_DIR}/src/device/usbd_control.c
     ${tinyusb_SOURCE_DIR}/src/class/midi/midi_device.c
+    ${tinyusb_SOURCE_DIR}/src/class/cdc/cdc_device.c
 )
 
 target_include_directories(tinyusb PUBLIC

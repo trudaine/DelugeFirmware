@@ -21,3 +21,6 @@
 
 constexpr uint8_t kMidiInPipe = 2;
 constexpr uint8_t kMidiOutPipe = 3;
+constexpr uint8_t kCdcNotifPipe = 4;
+constexpr uint8_t kCdcOutPipe = 5;
+constexpr uint8_t kCdcInPipe = 6;
