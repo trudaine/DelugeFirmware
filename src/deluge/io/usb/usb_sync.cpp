@@ -6,7 +6,11 @@
 
 #include "usb_sync.h"
 #include "fatfs/fatfs.hpp"
+#include "model/clip/instrument_clip.h"
+#include "model/model_stack.h"
+#include "model/output.h"
 #include "model/settings/runtime_feature_settings.h"
+#include "model/song/song.h"
 #include "playback/playback_handler.h"
 #include "tusb.h"
 #include <cstring>
@@ -127,6 +131,72 @@ static void handleReceivedPacket(uint8_t cmd, uint8_t* payload, uint16_t len) {
 			std::memcpy(filePath, payload, len);
 			filePath[len] = '\0';
 			startFileRead(filePath);
+		}
+	}
+	else if (cmd == 0x09) { // Write Parameter
+		if (len == 7) {
+			uint8_t paramKindByte = payload[0];
+			uint16_t paramID = payload[1] | (payload[2] << 8);
+			int32_t newValue = payload[3] | (payload[4] << 8) | (payload[5] << 16) | (payload[6] << 24);
+
+			deluge::modulation::params::Kind kind = deluge::modulation::params::Kind::NONE;
+			if (paramKindByte == 0)
+				kind = deluge::modulation::params::Kind::PATCHED;
+			else if (paramKindByte == 1)
+				kind = deluge::modulation::params::Kind::UNPATCHED_SOUND;
+			else if (paramKindByte == 2)
+				kind = deluge::modulation::params::Kind::UNPATCHED_GLOBAL;
+
+			InstrumentClip* clip = getCurrentInstrumentClip();
+			if (clip && clip->output) {
+				ModelStackWithTimelineCounter modelStack;
+				modelStack.song = currentSong;
+				modelStack.setTimelineCounter(clip);
+
+				ModelStackWithAutoParam* modelStackWithParam =
+				    clip->output->getModelStackWithParam(&modelStack, clip, paramID, kind, true, false);
+
+				if (modelStackWithParam && modelStackWithParam->autoParam) {
+					modelStackWithParam->autoParam->setValuePossiblyForRegion(newValue, modelStackWithParam, 0, 0);
+				}
+			}
+		}
+	}
+	else if (cmd == 0x0A) { // Read Parameter
+		if (len == 3) {
+			uint8_t paramKindByte = payload[0];
+			uint16_t paramID = payload[1] | (payload[2] << 8);
+
+			deluge::modulation::params::Kind kind = deluge::modulation::params::Kind::NONE;
+			if (paramKindByte == 0)
+				kind = deluge::modulation::params::Kind::PATCHED;
+			else if (paramKindByte == 1)
+				kind = deluge::modulation::params::Kind::UNPATCHED_SOUND;
+			else if (paramKindByte == 2)
+				kind = deluge::modulation::params::Kind::UNPATCHED_GLOBAL;
+
+			InstrumentClip* clip = getCurrentInstrumentClip();
+			if (clip && clip->output) {
+				ModelStackWithTimelineCounter modelStack;
+				modelStack.song = currentSong;
+				modelStack.setTimelineCounter(clip);
+
+				ModelStackWithAutoParam* modelStackWithParam =
+				    clip->output->getModelStackWithParam(&modelStack, clip, paramID, kind, true, false);
+
+				if (modelStackWithParam && modelStackWithParam->autoParam) {
+					int32_t val = modelStackWithParam->autoParam->getCurrentValue();
+					uint8_t resp[7];
+					resp[0] = paramKindByte;
+					resp[1] = payload[1];
+					resp[2] = payload[2];
+					resp[3] = val & 0xFF;
+					resp[4] = (val >> 8) & 0xFF;
+					resp[5] = (val >> 16) & 0xFF;
+					resp[6] = (val >> 24) & 0xFF;
+					sendResponsePacket(0x0B, resp, 7);
+				}
+			}
 		}
 	}
 }
