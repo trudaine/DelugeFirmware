@@ -30,6 +30,7 @@ struct StutterConfig {
 	bool quantized = true;
 	bool reversed = false;
 	bool pingPong = false;
+	bool latch = false;
 };
 
 class Stutterer {

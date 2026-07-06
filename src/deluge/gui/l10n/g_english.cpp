@@ -140,6 +140,7 @@ PLACE_SDRAM_DATA Language english{
         {STRING_FOR_PORTAMENTO_SHORT, "PRTA"},
         {STRING_FOR_STUTTER, "STUTTER"},
         {STRING_FOR_STUTTER_RATE, "Stutter Rate"},
+        {STRING_FOR_LATCH, "Latch"},
         {STRING_FOR_DISABLED, "Disabled"},
         {STRING_FOR_ENABLED, "Enabled"},
         {STRING_FOR_OK, "OK"},

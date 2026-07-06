@@ -483,6 +483,7 @@ void ModControllableAudio::writeTagsToFile(Serializer& writer) {
 	writer.writeAttribute("quantized", stutterConfig.quantized);
 	writer.writeAttribute("reverse", stutterConfig.reversed);
 	writer.writeAttribute("pingPong", stutterConfig.pingPong);
+	writer.writeAttribute("latch", stutterConfig.latch);
 	writer.closeTag();
 }
 
@@ -763,6 +764,7 @@ Error ModControllableAudio::readTagFromFile(Deserializer& reader, char const* ta
 		stutterConfig.quantized = true;
 		stutterConfig.reversed = false;
 		stutterConfig.pingPong = false;
+		stutterConfig.latch = false;
 		reader.match('{');
 		while (*(tagName = reader.readNextTagOrAttributeName())) {
 			if (!strcmp(tagName, "quantized")) {
@@ -779,6 +781,11 @@ Error ModControllableAudio::readTagFromFile(Deserializer& reader, char const* ta
 				int32_t contents = reader.readTagOrAttributeValueInt();
 				stutterConfig.pingPong = static_cast<bool>(std::clamp(contents, 0_i32, 1_i32));
 				reader.exitTag("pingPong");
+			}
+			else if (!strcmp(tagName, "latch")) {
+				int32_t contents = reader.readTagOrAttributeValueInt();
+				stutterConfig.latch = static_cast<bool>(std::clamp(contents, 0_i32, 1_i32));
+				reader.exitTag("latch");
 			}
 		}
 		reader.exitTag("stutter", true);

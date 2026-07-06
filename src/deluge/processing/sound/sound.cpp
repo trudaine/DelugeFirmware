@@ -4456,10 +4456,17 @@ bool Sound::modEncoderButtonAction(uint8_t whichModEncoder, bool on, ModelStackW
 	if (ourModKnob->paramDescriptor.isSetToParamWithNoSource(params::UNPATCHED_START
 	                                                         + params::UNPATCHED_STUTTER_RATE)) {
 		if (on) {
-			beginStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			if (stutterConfig.latch && stutterer.isStuttering(this)) {
+				endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
+			else {
+				beginStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
 		}
 		else {
-			endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			if (!stutterConfig.latch) {
+				endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
 		}
 		reassessRenderSkippingStatus(modelStack->addSoundFlags());
 

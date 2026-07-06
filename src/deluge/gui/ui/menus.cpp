@@ -203,6 +203,7 @@
 #include "gui/menu_item/source/patched_param/modulator_level.h"
 #include "gui/menu_item/stem_export/start.h"
 #include "gui/menu_item/stutter/direction.h"
+#include "gui/menu_item/stutter/latch.h"
 #include "gui/menu_item/stutter/quantized.h"
 #include "gui/menu_item/stutter/rate.h"
 #include "gui/menu_item/submenu.h"
@@ -512,9 +513,10 @@ HorizontalMenu delayMenu{
 stutter::StutterDirection stutterDirectionMenu{STRING_FOR_DIRECTION, STRING_FOR_DIRECTION};
 stutter::QuantizedStutter stutterQuantizedMenu{STRING_FOR_QUANTIZE, STRING_FOR_QUANTIZE};
 stutter::Rate stutterRateMenu{STRING_FOR_RATE, STRING_FOR_STUTTER_RATE};
+stutter::Latch stutterLatchMenu{STRING_FOR_LATCH, STRING_FOR_LATCH};
 
 HorizontalMenu stutterMenu{STRING_FOR_STUTTER,
-                           {&stutterRateMenu, &stutterDirectionMenu, &stutterQuantizedMenu},
+                           {&stutterRateMenu, &stutterDirectionMenu, &stutterQuantizedMenu, &stutterLatchMenu},
                            HorizontalMenu::Layout::FIXED};
 
 // Bend Ranges -------------------------------------------------------------------------------

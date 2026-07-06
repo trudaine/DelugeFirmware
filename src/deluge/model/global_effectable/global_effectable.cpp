@@ -227,10 +227,17 @@ bool GlobalEffectable::modEncoderButtonAction(uint8_t whichModEncoder, bool on,
 	// Stutter section
 	if (modKnobMode == 6 && whichModEncoder == 1) {
 		if (on) {
-			beginStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			if (stutterConfig.latch && stutterer.isStuttering(this)) {
+				endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
+			else {
+				beginStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
 		}
 		else {
-			endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			if (!stutterConfig.latch) {
+				endStutter((ParamManagerForTimeline*)modelStack->paramManager);
+			}
 		}
 		return false;
 	}
