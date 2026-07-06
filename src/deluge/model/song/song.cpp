@@ -372,6 +372,42 @@ bool Song::mayDoubleTempo() {
 	return ((timePerTimerTickBig >> 33) > kMinTimePerTimerTick);
 }
 
+void Song::takeSnapshot() {
+	for (Output* o = firstOutput; o; o = o->next) {
+		o->mutedInArrangementModeSnapshot = o->mutedInArrangementMode;
+	}
+	for (int i = 0; i < sessionClips.getNumElements(); i++) {
+		Clip* clip = sessionClips.getClipAtIndex(i);
+		if (clip) {
+			clip->activeIfNoSoloSnapshot = clip->activeIfNoSolo;
+		}
+	}
+	for (int i = 0; i < arrangementOnlyClips.getNumElements(); i++) {
+		Clip* clip = arrangementOnlyClips.getClipAtIndex(i);
+		if (clip) {
+			clip->activeIfNoSoloSnapshot = clip->activeIfNoSolo;
+		}
+	}
+}
+
+void Song::recallSnapshot() {
+	for (Output* o = firstOutput; o; o = o->next) {
+		o->mutedInArrangementMode = o->mutedInArrangementModeSnapshot;
+	}
+	for (int i = 0; i < sessionClips.getNumElements(); i++) {
+		Clip* clip = sessionClips.getClipAtIndex(i);
+		if (clip) {
+			clip->activeIfNoSolo = clip->activeIfNoSoloSnapshot;
+		}
+	}
+	for (int i = 0; i < arrangementOnlyClips.getNumElements(); i++) {
+		Clip* clip = arrangementOnlyClips.getClipAtIndex(i);
+		if (clip) {
+			clip->activeIfNoSolo = clip->activeIfNoSoloSnapshot;
+		}
+	}
+}
+
 // Returns true if a Clip created
 bool Song::ensureAtLeastOneSessionClip() {
 	// If no Clips added, make just one blank one - we can't have none!

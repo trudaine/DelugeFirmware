@@ -137,6 +137,19 @@ extern GlobalMIDICommand pendingGlobalMIDICommandNumClustersWritten;
 ActionResult View::buttonAction(deluge::hid::Button b, bool on, bool inCardRoutine) {
 	using namespace deluge::hid::button;
 
+	if (b == SESSION_VIEW && on) {
+		if (Buttons::isButtonPressed(LEARN)) {
+			currentSong->takeSnapshot();
+			display->displayPopup("SNAP");
+			return ActionResult::DEALT_WITH;
+		}
+		else if (Buttons::isShiftButtonPressed()) {
+			currentSong->recallSnapshot();
+			display->displayPopup("RCL");
+			return ActionResult::DEALT_WITH;
+		}
+	}
+
 	GlobalMIDICommand newGlobalMidiCommand;
 
 	// Tap tempo button. Shouldn't move this to MatrixDriver, because this code can put us in tapTempo mode, and other

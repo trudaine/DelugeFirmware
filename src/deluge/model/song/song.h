@@ -106,6 +106,8 @@ public:
 	~Song() override;
 	bool mayDoubleTempo();
 	bool ensureAtLeastOneSessionClip();
+	void takeSnapshot();
+	void recallSnapshot();
 	void transposeAllScaleModeClips(int32_t interval);
 	void transposeAllScaleModeClips(int32_t offset, bool chromatic);
 	bool anyScaleModeClips();
