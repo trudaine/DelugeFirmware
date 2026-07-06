@@ -1239,7 +1239,8 @@ void logAudioAction(char const* string, const char* file, int line) {
 	if (numAudioLogItems >= AUDIO_LOG_SIZE)
 		return;
 	audioLogTimes[numAudioLogItems] = *TCNT[TIMER_SYSTEM_FAST];
-	strcpy(audioLogStrings[numAudioLogItems], string);
+	strncpy(audioLogStrings[numAudioLogItems], string, 63);
+	audioLogStrings[numAudioLogItems][63] = '\0';
 	audioLogFiles[numAudioLogItems] = file;
 	audioLogLines[numAudioLogItems] = line;
 	numAudioLogItems++;
