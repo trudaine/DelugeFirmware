@@ -167,6 +167,13 @@ add_compile_options(
     $<$<CONFIG:DEBUG>:-Og>
     $<$<CONFIG:RELEASE,RELWITHDEBINFO>:-O2>
 
+    # Work around a GCC 14 LTO internal compiler error (segfault in the predictive-commoning
+    # GIMPLE pass during ltrans, hit on a constprop clone of flushUSBMIDIToHostedDevice). This
+    # is a compiler bug, not a code issue; predictive commoning is a minor loop optimization and
+    # disabling it is behaviour-neutral. Per-function attributes are ignored by ltrans, so it
+    # must be global. Applied to compile and link so it reaches the ltrans stage.
+    $<$<CONFIG:RELEASE,RELWITHDEBINFO>:-fno-predictive-commoning>
+
     # does not block inlining, just blocks considering all functions for inlining
     # https://developer.arm.com/documentation/100067/0600/Compiler-Command-line-Options/-finline-functions---fno-inline-functions?lang=en
     -fno-inline-functions
@@ -282,6 +289,9 @@ target_link_options(deluge PUBLIC
     # Link-Time Optimization
     $<$<CONFIG:RELEASE,RELWITHDEBINFO>:-flto=auto>
     $<$<CONFIG:RELEASE,RELWITHDEBINFO>:-fuse-linker-plugin>
+    # See the matching compile-option comment: disable predictive commoning at the ltrans stage
+    # to dodge a GCC 14 LTO ICE.
+    $<$<CONFIG:RELEASE,RELWITHDEBINFO>:-fno-predictive-commoning>
 
     # Coloring
     $<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color=always>

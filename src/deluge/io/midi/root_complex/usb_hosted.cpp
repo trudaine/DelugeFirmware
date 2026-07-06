@@ -117,6 +117,9 @@ void setupUSBHostReceiveTransfer(int32_t ip, int32_t midiDeviceNum) {
 	*/
 }
 
+// NB: this function triggers a GCC 14 LTO ICE in the predictive-commoning pass; worked around
+// globally via -fno-tree-predictive-commoning in CMakeLists.txt (per-function attributes are
+// ignored by the LTO ltrans stage). See the comment there.
 void flushUSBMIDIToHostedDevice(int32_t ip, int32_t d, bool resume) {
 	ConnectedUSBMIDIDevice* connectedDevice = &connectedUSBMIDIDevices[ip][d];
 	// there was an assumption that the pipe wouldn't have changed if we were resuming a transfer but that has turned

@@ -75,7 +75,7 @@ std::array<MenuItem*, RuntimeFeatureSettingType::MaxElement - kNonTopLevelSettin
     &menuAlternativeTapTempoBehaviour,
     &menuHorizontalMenus,
     &menuTrimFromStartOfAudioClip,
-    &menuShowBatteryLevel};
+    &menuShowBatteryLevel,
     &menuUsbSerialSync};
 
 Settings::Settings(l10n::String name, l10n::String title) : menu_item::Submenu(name, title, subMenuEntries) {

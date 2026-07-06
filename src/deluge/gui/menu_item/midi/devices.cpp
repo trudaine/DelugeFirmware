@@ -83,25 +83,6 @@ void Devices::beginSession(MenuItem* navigatedBackwardFrom) {
 	}
 }
 
-int32_t Devices::computeScrollForSelected(int32_t selected) {
-	// Walk upward from the selection, counting connected devices, until the viewport is full or we reach the
-	// first device. This keeps the selection at (or above) the bottom row while showing as many devices above it
-	// as fit, rather than scrolling the selection to the top and hiding everything above it.
-	int32_t scroll = selected;
-	int32_t numSeen = 1; // The selected device itself.
-	int32_t d = selected;
-	while (d > lowestDeviceNum && numSeen < kOLEDMenuNumOptionsVisible) {
-		d--;
-		MIDICable* cable = getCable(d);
-		if (!(cable && cable->connectionFlags)) {
-			continue; // Disconnected devices aren't drawn, so they don't take up a row.
-		}
-		numSeen++;
-		scroll = d;
-	}
-	return scroll;
-}
-
 void Devices::selectEncoderAction(int32_t offset) {
 	offset = std::clamp<int32_t>(offset, -1, 1);
 
@@ -113,16 +94,12 @@ void Devices::selectEncoderAction(int32_t offset) {
 		new_index += offset;
 		if (new_index > max_index) {
 			if (display->haveOLED()) {
-				this->setValue(startValue);
-				soundEditor.currentMIDICable = getCable(startValue);
 				return;
 			}
 			new_index = 0;
 		}
 		if (new_index < 0) {
 			if (display->haveOLED()) {
-				this->setValue(startValue);
-				soundEditor.currentMIDICable = getCable(startValue);
 				return;
 			}
 			new_index = max_index;

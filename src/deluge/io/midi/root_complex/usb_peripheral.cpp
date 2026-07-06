@@ -24,7 +24,9 @@
 
 using namespace deluge::io::usb;
 
-MIDIRootComplexUSBPeripheral::MIDIRootComplexUSBPeripheral() : cables_{0, 1, 2} {
+// Per-port MPE/clock config preserved from main's original upstreamUSBMIDICable{1,2,3} globals
+// (port 0: clock-in; port 1: MPE; port 2: neither) — main's cable ctor is (portNum, mpe, clock_in).
+MIDIRootComplexUSBPeripheral::MIDIRootComplexUSBPeripheral() : cables_{{{0, false, true}, {1, true, false}, {2, false, false}}} {
 }
 
 MIDIRootComplexUSBPeripheral::~MIDIRootComplexUSBPeripheral() {

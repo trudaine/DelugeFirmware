@@ -551,7 +551,6 @@ void registerTasks() {
 	uint8_t p = 0;
 	AudioEngine::routine_task_id = addRepeatingTask(&(AudioEngine::routine_task), p++, 8 / 44100., 64 / 44100.,
 	                                                128 / 44100., "audio  routine", RESOURCE_NONE);
-	addRepeatingTask(MidiEngine::check_incoming_usb, p++, 0.0005, 0.0005, 0.001, "check usb midi", RESOURCE_USB);
 
 	// this will block itself unless an encoder is actually moved so can have a fast rate
 	encoders::EncoderTaskID = addRepeatingTask(&(encoders::interpretEncodersTask), p++, 0.001, 0.001, 0.002,
