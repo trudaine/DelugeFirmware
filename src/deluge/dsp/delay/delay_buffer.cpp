@@ -56,7 +56,11 @@ Error DelayBuffer::init(uint32_t rate, uint32_t failIfThisSize, bool includeExtr
 }
 
 void DelayBuffer::clear() {
-	memset(start_, 0, sizeof(StereoSample) * (delaySpaceBetweenReadAndWrite + 2));
+	size_t elementsToClear = sizeIncludingExtra;
+	if (elementsToClear > (size_t)(delaySpaceBetweenReadAndWrite + 2)) {
+		elementsToClear = (size_t)(delaySpaceBetweenReadAndWrite + 2);
+	}
+	memset(start_, 0, sizeof(StereoSample) * elementsToClear);
 	current_ = start_ + delaySpaceBetweenReadAndWrite;
 	resample_config_ = std::nullopt;
 }
