@@ -5,6 +5,7 @@
  */
 
 #include "usb_sync.h"
+#include "model/settings/runtime_feature_settings.h"
 #include "playback/playback_handler.h"
 #include "tusb.h"
 
@@ -15,6 +16,9 @@ void initUsbSync() {
 }
 
 void usbSyncTask() {
+	if (!runtimeFeatureSettings.isOn(RuntimeFeatureSettingType::UsbSerialSync)) {
+		return;
+	}
 	if (!tud_cdc_connected()) {
 		return;
 	}

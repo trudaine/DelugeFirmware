@@ -199,6 +199,10 @@ void RuntimeFeatureSettings::init() {
 	SetupOnOffSetting(settings[RuntimeFeatureSettingType::TrimFromStartOfAudioClip],
 	                  STRING_FOR_COMMUNITY_FEATURE_TRIM_FROM_START_OF_AUDIO_CLIP, "trimFromStartOfAudioClip",
 	                  RuntimeFeatureStateToggle::On);
+
+	// USB Serial Sync
+	SetupOnOffSetting(settings[RuntimeFeatureSettingType::UsbSerialSync], STRING_FOR_COMMUNITY_FEATURE_USB_SERIAL_SYNC,
+	                  "usbSerialSync", RuntimeFeatureStateToggle::On);
 }
 
 void RuntimeFeatureSettings::readSettingsFromFile() {
