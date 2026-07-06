@@ -131,7 +131,16 @@ public:
 
 		// this is 1q31*1q16/(1q16+tan(f)/2)
 		// tan(f) is q17
-		divideBy1PlusTannedFrequency = (q31_t)(288230376151711744.0 / (double)(ONE_Q16 + (tannedFrequency >> 1)));
+		double val = 288230376151711744.0 / (double)(ONE_Q16 + (tannedFrequency >> 1));
+		if (val > INT32_MAX) {
+			divideBy1PlusTannedFrequency = INT32_MAX;
+		}
+		else if (val < INT32_MIN) {
+			divideBy1PlusTannedFrequency = INT32_MIN;
+		}
+		else {
+			divideBy1PlusTannedFrequency = (q31_t)val;
+		}
 		fc = multiply_32x32_rshift32_rounded(tannedFrequency, divideBy1PlusTannedFrequency) << 4;
 	}
 	q31_t fc;
