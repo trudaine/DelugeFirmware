@@ -54,6 +54,15 @@ public:
 		ModFXProcessor::modFXBufferWriteIndex = 0;
 		memset(allpassMemory, 0, sizeof(allpassMemory));
 	}
+	ModFXProcessor(const ModFXProcessor& other) {
+		phaserMemory = other.phaserMemory;
+		std::memcpy(allpassMemory, other.allpassMemory, sizeof(allpassMemory));
+		modFXBuffer = nullptr;
+		modFXBufferWriteIndex = 0;
+		modFXLFO = other.modFXLFO;
+		modFXLFOStereo = other.modFXLFOStereo;
+	}
+	ModFXProcessor& operator=(const ModFXProcessor&) = delete;
 	~ModFXProcessor() {
 		// Free the mod fx memory
 		if (modFXBuffer) {
