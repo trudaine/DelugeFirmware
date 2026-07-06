@@ -89,6 +89,7 @@ public:
 
 	uint8_t defaultVelocity = FlashStorage::defaultVelocity;
 	LearnedMIDI midiInput;
+	int32_t delayMs = 0;
 
 protected:
 	Clip* createNewClipForArrangementRecording(ModelStack* modelStack) final;

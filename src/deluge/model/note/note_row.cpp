@@ -2035,6 +2035,16 @@ int32_t NoteRow::processCurrentPos(ModelStackWithNoteRow* modelStack, int32_t ti
 
 	InstrumentClip* clip = (InstrumentClip*)modelStack->getTimelineCounter();
 
+	int32_t delayTicks = 0;
+	if (clip->output) {
+		Instrument* instrument = static_cast<Instrument*>(clip->output);
+		if (instrument && instrument->delayMs != 0) {
+			float bpm = modelStack->song->calculateBPM();
+			delayTicks =
+			    (int32_t)((float)instrument->delayMs * (float)modelStack->song->getQuarterNoteLength() * bpm / 60000.f);
+		}
+	}
+
 	int32_t effectiveLength = modelStack->getLoopLength();
 	bool playingReversedNow = modelStack->isCurrentlyPlayingReversed();
 	bool didPingpong = false;
@@ -2194,7 +2204,7 @@ stopNote:
 			else {
 
 				// First search for the (should-be-existent) note which begins "earlier" than our current pos.
-				int32_t searchLessThan = effectiveCurrentPos;
+				int32_t searchLessThan = effectiveCurrentPos - delayTicks;
 
 				// If we're playing backwards, we want to include notes whose pos is *equal* to the current pos,
 				// which would mean ending right now (cos we're playing backwards).
@@ -2214,7 +2224,7 @@ stopNote:
 				// If playing reversed, we have to check that we've even reached this note yet. Maybe we
 				// haven't, and there's actually no note that should be currently playing (e.g. after an undo).
 				if (playingReversedNow) {
-					int32_t posRelativeToNoteLeftEdge = effectiveCurrentPos - thisNote->pos;
+					int32_t posRelativeToNoteLeftEdge = effectiveCurrentPos - (thisNote->pos + delayTicks);
 					if (posRelativeToNoteLeftEdge < 0) {
 						posRelativeToNoteLeftEdge += effectiveLength;
 					}
@@ -2223,8 +2233,8 @@ stopNote:
 					}
 				}
 
-				int32_t noteLateEdgePos = thisNote->pos; // Depending on play direction, this will be either the
-				                                         // left or right edge of the Note.
+				int32_t noteLateEdgePos = thisNote->pos + delayTicks; // Depending on play direction, this will be
+				                                                      // either the left or right edge of the Note.
 				if (!playingReversedNow) {
 					noteLateEdgePos += thisNote->length;
 				}
@@ -2348,8 +2358,9 @@ currentlyOff:
 				// Or if still here, we've decided on a valid note index
 gotValidNoteIndex:
 				Note* nextNote = (Note*)notes.getElementAddress(nextNoteI);
-				int32_t newTicksTil = nextNote->pos - effectiveCurrentPos; // Assumes we're playing forwards - it'll get
-				                                                           // modified just below otherwise
+				int32_t newTicksTil =
+				    (nextNote->pos + delayTicks) - effectiveCurrentPos; // Assumes we're playing forwards - it'll get
+				                                                        // modified just below otherwise
 
 				// If playing reversed...
 				if (playingReversedNow) {
@@ -2371,7 +2382,8 @@ gotValidNoteIndex:
 				// If we've arrived at a Note right now...
 				if (newTicksTil <= 0) {
 					if (effectiveForwardPos >= ignoreNoteOnsBefore_) {
-						playNote(true, modelStack, nextNote, 0, 0, justStoppedConstantNote, pendingNoteOnList);
+						int32_t ticksLate = -newTicksTil;
+						playNote(true, modelStack, nextNote, ticksLate, 0, justStoppedConstantNote, pendingNoteOnList);
 					}
 
 					// If playing reversed and not allowing note tails (i.e. doing one-shot drums), we're

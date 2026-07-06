@@ -95,6 +95,9 @@ bool Instrument::writeDataToFile(Serializer& writer, Clip* clipForSavingOutputOn
 			writer.writeAttribute("presetFolder", dirPath.get());
 		}
 		writer.writeAttribute("defaultVelocity", defaultVelocity);
+		if (delayMs != 0) {
+			writer.writeAttribute("delayMs", delayMs);
+		}
 	}
 
 	return Output::writeDataToFile(writer, clipForSavingOutputOnly, song);
@@ -133,6 +136,10 @@ bool Instrument::readTagFromFile(Deserializer& reader, char const* tagName) {
 
 	else if (!strcmp(tagName, "presetFolder")) {
 		reader.readTagOrAttributeValueString(&dirPath);
+	}
+
+	else if (!strcmp(tagName, "delayMs")) {
+		delayMs = reader.readTagOrAttributeValueInt();
 	}
 
 	else {

@@ -93,6 +93,7 @@
 #include "gui/menu_item/midi/bank.h"
 #include "gui/menu_item/midi/command.h"
 #include "gui/menu_item/midi/default_velocity_to_level.h"
+#include "gui/menu_item/midi/delay.h"
 #include "gui/menu_item/midi/device.h"
 #include "gui/menu_item/midi/device_definition/linked.h"
 #include "gui/menu_item/midi/device_definition/submenu.h"
@@ -637,6 +638,7 @@ midi::device_definition::DeviceDefinitionSubmenu midiDeviceDefinitionMenu{
     },
 };
 
+midi::Delay midiDelayMenu{STRING_FOR_OFFSET, STRING_FOR_OFFSET};
 midi::Bank midiBankMenu{STRING_FOR_BANK, STRING_FOR_MIDI_BANK};
 midi::Sub midiSubMenu{STRING_FOR_SUB_BANK_SHORT, STRING_FOR_MIDI_SUB_BANK};
 midi::PGM midiPGMMenu{STRING_FOR_PGM, STRING_FOR_MIDI_PGM_NUMB_MENU_TITLE};
@@ -1569,6 +1571,7 @@ menu_item::Submenu soundEditorRootMenuMIDIOrCV{
     {
         &midiDeviceDefinitionMenu,
         &midiProgramMenu,
+        &midiDelayMenu,
         &arpMenuMIDIOrCV,
         &randomizerMenu,
         &bendMenu,
