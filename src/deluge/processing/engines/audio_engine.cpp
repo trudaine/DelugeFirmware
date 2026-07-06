@@ -35,6 +35,7 @@
 #include "hid/encoder_input.h"
 #include "hid/encoders.h"
 #include "hid/led/indicator_leds.h"
+#include "io/debug/dsp_tap.h"
 #include "io/debug/log.h"
 #include "io/midi/midi_engine.h"
 #include "memory/general_memory_allocator.h"
@@ -628,6 +629,10 @@ void renderAudio(size_t numSamples) {
 	renderSongFX(numSamples);
 
 	metronome.render(renderingBuffer);
+
+	// DSP golden-buffer tap (debug-only, trudaine fork): capture the final master output for
+	// bit-exact comparison against the Java emulation. No-op unless armed over SysEx.
+	DspTap::capture(renderingBuffer);
 
 	approxRMSLevel = envelopeFollower.calcApproxRMS(renderingBuffer);
 

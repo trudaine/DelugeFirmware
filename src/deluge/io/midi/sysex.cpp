@@ -18,12 +18,54 @@
  */
 
 #include "io/midi/sysex.h"
+#include "io/debug/dsp_tap.h"
 #include "io/debug/print.h"
 #include "io/midi/midi_device.h"
 #include "io/midi/midi_engine.h"
 #include "util/chainload.h"
 
 #include "util/pack.h"
+
+#include <algorithm>
+
+// DSP golden-buffer tap readback (debug-only, trudaine fork): stream one chunk of the captured
+// master-output samples back as a Deluge SysEx reply. The 1 KB sysex_fmt_buffer forces chunking,
+// so the host requests chunk 0, 1, ... until it has capturedCount samples. Reply payload (before
+// 7-bit packing): [capturedCount:4 LE][chunkIndex:1][nSamples:2 LE][nSamples * int32 LE].
+static void dspTapSendChunk(MIDICable& cable, uint8_t chunkIndex) {
+	constexpr int32_t kSamplesPerChunk = 180;
+	int32_t captured = DspTap::capturedCount();
+	const int32_t* buf = DspTap::data();
+	int32_t start = (int32_t)chunkIndex * kSamplesPerChunk;
+	int32_t n = 0;
+	if (start < captured) {
+		n = std::min(kSamplesPerChunk, captured - start);
+	}
+
+	uint8_t raw[7 + kSamplesPerChunk * 4];
+	raw[0] = captured & 0xFF;
+	raw[1] = (captured >> 8) & 0xFF;
+	raw[2] = (captured >> 16) & 0xFF;
+	raw[3] = (captured >> 24) & 0xFF;
+	raw[4] = chunkIndex;
+	raw[5] = n & 0xFF;
+	raw[6] = (n >> 8) & 0xFF;
+	int32_t rawLen = 7;
+	for (int32_t i = 0; i < n; i++) {
+		int32_t v = buf[start + i];
+		raw[rawLen++] = v & 0xFF;
+		raw[rawLen++] = (v >> 8) & 0xFF;
+		raw[rawLen++] = (v >> 16) & 0xFF;
+		raw[rawLen++] = (v >> 24) & 0xFF;
+	}
+
+	const uint8_t hdr[] = {0xF0, 0x00, 0x21, 0x7B, 0x01, 0x03, 0x41, 0x00}; // 0x41 = DSP-tap reply
+	uint8_t* reply = midiEngine.sysex_fmt_buffer;
+	memcpy(reply, hdr, sizeof(hdr));
+	int32_t packed = pack_8bit_to_7bit(reply + sizeof(hdr), 1024 - (int32_t)sizeof(hdr) - 1, raw, rawLen);
+	reply[sizeof(hdr) + packed] = 0xF7;
+	cable.sendSysex(reply, sizeof(hdr) + packed + 1);
+}
 
 void Debug::sysexReceived(MIDICable& cable, uint8_t* data, int32_t len) {
 	if (len < 3) {
@@ -51,6 +93,16 @@ void Debug::sysexReceived(MIDICable& cable, uint8_t* data, int32_t len) {
 #ifdef ENABLE_SYSEX_LOAD
 		loadCheckAndRun(data, len);
 #endif
+		break;
+
+	case 3:
+		// DSP golden-buffer tap: arm capture of the next window of master output.
+		DspTap::arm();
+		break;
+
+	case 4:
+		// DSP golden-buffer tap: read back chunk data[2] of the captured samples.
+		dspTapSendChunk(cable, data[2]);
 		break;
 
 	default:
