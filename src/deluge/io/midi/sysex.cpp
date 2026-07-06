@@ -105,6 +105,11 @@ void Debug::sysexReceived(MIDICable& cable, uint8_t* data, int32_t len) {
 		dspTapSendChunk(cable, data[2]);
 		break;
 
+	case 5:
+		// DSP golden-buffer tap: arm at the next note onset (onset-synced attack capture).
+		DspTap::armOnNextNote();
+		break;
+
 	default:
 		break;
 	}

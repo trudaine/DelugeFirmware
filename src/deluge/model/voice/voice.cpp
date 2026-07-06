@@ -24,6 +24,7 @@
 #include "dsp/timestretch/time_stretcher.h"
 #include "dsp/util.hpp"
 #include "gui/waveform/waveform_renderer.h"
+#include "io/debug/dsp_tap.h"
 #include "io/debug/log.h"
 #include "memory/general_memory_allocator.h"
 #include "model/clip/instrument_clip.h"
@@ -113,6 +114,8 @@ bool Voice::noteOn(ModelStackWithSoundFlags* modelStack, int32_t newNoteCodeBefo
                    const int16_t* mpeValues) {
 
 	GeneralMemoryAllocator::get().checkStack("Voice::noteOn");
+
+	DspTap::onNoteStart(); // debug-only (trudaine fork): onset-synced DSP-tap arming
 
 	inputCharacteristics[util::to_underlying(MIDICharacteristic::NOTE)] = newNoteCodeBeforeArpeggiation;
 	inputCharacteristics[util::to_underlying(MIDICharacteristic::CHANNEL)] = newFromMIDIChannel;

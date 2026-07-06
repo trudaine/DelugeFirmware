@@ -8,12 +8,24 @@ namespace DspTap {
 static int32_t g_buf[kMaxSamples];
 static volatile int32_t g_remaining = 0; // samples still to capture (0 = idle/done)
 static int32_t g_writePos = 0;
-static int32_t g_captured = 0; // samples captured since last arm
+static int32_t g_captured = 0;                // samples captured since last arm
+static volatile bool g_armOnNextNote = false; // arm at the next note onset
 
 void arm() {
 	g_writePos = 0;
 	g_captured = 0;
 	g_remaining = kMaxSamples;
+}
+
+void armOnNextNote() {
+	g_armOnNextNote = true;
+}
+
+void onNoteStart() {
+	if (g_armOnNextNote) {
+		g_armOnNextNote = false;
+		arm();
+	}
 }
 
 void capture(std::span<StereoSample> buffer) {
