@@ -20,6 +20,7 @@
 #include "RZA1/sdhi/inc/sdif.h"
 #include "definitions_cxx.hpp"
 #include "deluge/io/usb//usb_state.h"
+#include "deluge/io/usb/usb_sync.h"
 #include "drivers/pic/pic.h"
 #include "gui/ui/audio_recorder.h"
 #include "gui/ui/browser/browser.h"
@@ -562,6 +563,7 @@ void registerTasks() {
 	addRepeatingTask([]() { audioFileManager.loadAnyEnqueuedClusters(128, false); }, p++, 0.0001, 0.0001, 0.0002,
 	                 "load clusters", RESOURCE_NONE);
 	addRepeatingTask([]() { tud_task(); }, p++, 0.002, 0.002, 0.002, "read USB", RESOURCE_USB);
+	addRepeatingTask([]() { deluge::io::usb::usbSyncTask(); }, p++, 0.01, 0.01, 0.01, "usb sync", RESOURCE_USB);
 	// handles sd card recorders
 	// named "slow" but isn't actually, it handles audio recording setup
 	addRepeatingTask(&AudioEngine::slowRoutine, p++, 0.001, 0.005, 0.05, "audio slow", RESOURCE_NONE);

@@ -98,11 +98,14 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 //--------------------------------------------------------------------+
 //
 
-enum { ITF_NUM_MIDI = 0, ITF_NUM_MIDI_STREAMING, ITF_NUM_TOTAL };
+enum { ITF_NUM_MIDI = 0, ITF_NUM_MIDI_STREAMING, ITF_NUM_CDC, ITF_NUM_CDC_DATA, ITF_NUM_TOTAL };
 
 #define NCABLES 3
 #define EPNUM_MIDI_IN 1
 #define EPNUM_MIDI_OUT 2
+#define EPNUM_CDC_NOTIF 3
+#define EPNUM_CDC_OUT 4
+#define EPNUM_CDC_IN 5
 
 // TODO: move this in to usbd.h in tinyusb
 // clang-format off
@@ -120,7 +123,7 @@ enum { ITF_NUM_MIDI = 0, ITF_NUM_MIDI_STREAMING, ITF_NUM_TOTAL };
 
 #define CONFIG_TOTAL_LEN                                                                                               \
 	(TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_HEAD_LEN + TUD_MIDI_DESC_JACK_EMBEDDED_LEN * NCABLES                          \
-	 + TUD_MIDI_DESC_EP_LEN(NCABLES) * 2)
+	 + TUD_MIDI_DESC_EP_LEN(NCABLES) * 2 + TUD_CDC_DESC_LEN)
 
 uint8_t const desc_fs_configuration[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 500),
@@ -139,7 +142,8 @@ uint8_t const desc_fs_configuration[] = {
     TUD_MIDI_JACKID_IN_EMBONLY(1),
     TUD_MIDI_JACKID_IN_EMBONLY(2),
     TUD_MIDI_JACKID_IN_EMBONLY(3),
-};
+
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 0, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64)};
 
 #if TUD_OPT_HIGH_SPEED
 uint8_t const desc_hs_configuration[] = {
@@ -159,9 +163,8 @@ uint8_t const desc_hs_configuration[] = {
     TUD_MIDI_JACKID_IN_EMBONLY(1),
     TUD_MIDI_JACKID_IN_EMBONLY(2),
     TUD_MIDI_JACKID_IN_EMBONLY(3),
-};
-}
-;
+
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 0, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 512)};
 #endif
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -228,9 +231,39 @@ static void usbdConfigurePipes() {
 	            .continuous = 0,
 	        },
 	};
+	rusb1_pipe_config_t cdc_notif_pipe = {
+	    .buffer_offset = 24,
+	    .buffer_size = 0,
+	    .flags =
+	        {
+	            .double_buffer = 0,
+	            .continuous = 0,
+	        },
+	};
+	rusb1_pipe_config_t cdc_out_pipe = {
+	    .buffer_offset = 28,
+	    .buffer_size = 4,
+	    .flags =
+	        {
+	            .double_buffer = 1,
+	            .continuous = 0,
+	        },
+	};
+	rusb1_pipe_config_t cdc_in_pipe = {
+	    .buffer_offset = 36,
+	    .buffer_size = 4,
+	    .flags =
+	        {
+	            .double_buffer = 1,
+	            .continuous = 0,
+	        },
+	};
 
 	rusb1_configure_pipe(0, EPNUM_MIDI_IN, TUSB_DIR_IN, kMidiInPipe, &midi_in_pipe);
 	rusb1_configure_pipe(0, EPNUM_MIDI_OUT, TUSB_DIR_OUT, kMidiOutPipe, &midi_out_pipe);
+	rusb1_configure_pipe(0, EPNUM_CDC_NOTIF, TUSB_DIR_IN, kCdcNotifPipe, &cdc_notif_pipe);
+	rusb1_configure_pipe(0, EPNUM_CDC_OUT, TUSB_DIR_OUT, kCdcOutPipe, &cdc_out_pipe);
+	rusb1_configure_pipe(0, EPNUM_CDC_IN, TUSB_DIR_IN, kCdcInPipe, &cdc_in_pipe);
 
 	D_PRINTLN("Pipes configured");
 }

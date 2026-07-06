@@ -4,7 +4,7 @@
 #include "lib/printf.h"
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 //--------------------------------------------------------------------+
@@ -22,7 +22,7 @@
 
 // Port 0 is used as both device and host, in full speed.
 // TODO: support high speed.
-#define CFG_TUSB_RHPORT0_MODE     (OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED)
+#define CFG_TUSB_RHPORT0_MODE (OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED)
 
 // Use UCKsel 0, the 48MHz oscillator
 #define RUSB1_CLOCK_SOURCE 0
@@ -30,15 +30,15 @@
 #define RUSB1_WAIT_CYCLES 5
 
 #ifndef CFG_TUSB_OS
-#define CFG_TUSB_OS           OPT_OS_NONE
+#define CFG_TUSB_OS OPT_OS_NONE
 #endif
 
 #ifndef CFG_TUSB_DEBUG
-#define CFG_TUSB_DEBUG        0
+#define CFG_TUSB_DEBUG 0
 #endif
 
 #define CFG_TUSB_DEBUG_PRINTF deluge_tusb_print
-extern int deluge_tusb_print(char const * fmt, ...);
+extern int deluge_tusb_print(char const* fmt, ...);
 
 /* USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
  * Tinyusb use follows macros to declare transferring memory so that they can be put
@@ -52,7 +52,7 @@ extern int deluge_tusb_print(char const * fmt, ...);
 #endif
 
 #ifndef CFG_TUSB_MEM_ALIGN
-#define CFG_TUSB_MEM_ALIGN        __attribute__ ((aligned(4)))
+#define CFG_TUSB_MEM_ALIGN __attribute__((aligned(4)))
 #endif
 
 //--------------------------------------------------------------------
@@ -60,23 +60,27 @@ extern int deluge_tusb_print(char const * fmt, ...);
 //--------------------------------------------------------------------
 
 #ifndef CFG_TUD_ENDPOINT0_SIZE
-#define CFG_TUD_ENDPOINT0_SIZE    64
+#define CFG_TUD_ENDPOINT0_SIZE 64
 #endif
 
 //------------- CLASS -------------//
-#define CFG_TUD_DFU               0
-#define CFG_TUD_MIDI              1
+#define CFG_TUD_DFU 0
+#define CFG_TUD_MIDI 1
+#define CFG_TUD_CDC 1
 
 // DFU buffer size, it has to be set to the buffer size used in TUD_DFU_DESCRIPTOR
-#define CFG_TUD_DFU_XFER_BUFSIZE  (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_DFU_XFER_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
 
 // MIDI FIFO size of TX and RX
-#define CFG_TUD_MIDI_RX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
-#define CFG_TUD_MIDI_TX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_MIDI_RX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_MIDI_TX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
+
+// CDC FIFO size of TX and RX
+#define CFG_TUD_CDC_RX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_CDC_TX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
 
 #ifdef __cplusplus
- }
+}
 #endif
 
 #endif /* TUSB_CONFIG_H_ */
-
