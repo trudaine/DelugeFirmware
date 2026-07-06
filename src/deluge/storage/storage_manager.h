@@ -18,6 +18,9 @@
 #pragma once
 
 #include "definitions_cxx.hpp"
+
+constexpr size_t kDeserializerBufferSize = 1024;
+
 #include "extern.h"
 #include "fatfs/fatfs.hpp"
 #include "model/sync.h"
@@ -253,7 +256,7 @@ private:
 	int32_t tagDepthFile; // Will temporarily be different to the above as unwanted / unused XML tags parsed on the way
 	                      // to finding next useful data.
 
-	char stringBuffer[kFilenameBufferSize];
+	char stringBuffer[kDeserializerBufferSize];
 
 	void skipUntilChar(char endChar);
 
@@ -339,7 +342,7 @@ private:
 	enum JsonState { NewFile, KeyRead, ValueRead, ReadError };
 	JsonState readState = NewFile;
 
-	char stringBuffer[kFilenameBufferSize];
+	char stringBuffer[kDeserializerBufferSize];
 
 	void skipUntilChar(char endChar);
 	char unescape(char inchar);

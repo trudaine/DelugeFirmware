@@ -120,7 +120,7 @@ skipToNextTag:
 			}
 
 			// Store this character, if space in our un-ideal buffer
-			if (charPos < kFilenameBufferSize - 1) {
+			if (charPos < (int32_t)sizeof(stringBuffer) - 1) {
 				stringBuffer[charPos++] = thisChar;
 			}
 		}
@@ -227,7 +227,7 @@ reachedNameEnd:
 		}
 
 		int32_t numCharsHere = fileReadBufferCurrentPos - bufferPosAtStart;
-		int32_t numCharsToCopy = std::min<int32_t>(numCharsHere, kFilenameBufferSize - 1 - charPos);
+		int32_t numCharsToCopy = std::min<int32_t>(numCharsHere, (int32_t)sizeof(stringBuffer) - 1 - charPos);
 
 		if (numCharsToCopy > 0) {
 			memcpy(&stringBuffer[charPos], &fileClusterBuffer[bufferPosAtStart], numCharsToCopy);
@@ -462,7 +462,7 @@ char const* XMLDeserializer::readUntilChar(char endChar) {
 		}
 
 		int32_t numCharsHere = fileReadBufferCurrentPos - bufferPosAtStart;
-		int32_t numCharsToCopy = std::min<int32_t>(numCharsHere, kFilenameBufferSize - 1 - charPos);
+		int32_t numCharsToCopy = std::min<int32_t>(numCharsHere, (int32_t)sizeof(stringBuffer) - 1 - charPos);
 
 		if (numCharsToCopy > 0) {
 			memcpy(&stringBuffer[charPos], &fileClusterBuffer[bufferPosAtStart], numCharsToCopy);
@@ -483,6 +483,9 @@ char const* XMLDeserializer::readUntilChar(char endChar) {
 // Unlike readUntilChar(), above, does not put a null character at the end of the returned "string". And, has a preset
 // number of chars. And, returns NULL when nothing more to return. numChars must be <= FILENAME_BUFFER_SIZE
 char const* XMLDeserializer::readNextCharsOfTagOrAttributeValue(int32_t numChars) {
+	if (numChars >= (int32_t)sizeof(stringBuffer)) {
+		numChars = sizeof(stringBuffer) - 1;
+	}
 
 	int32_t charPos = 0;
 
