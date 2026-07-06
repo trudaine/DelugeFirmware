@@ -1286,8 +1286,10 @@ skipAutoRelease: {}
 			// the unison parts in ascending frequency, it's fine!
 
 			uint32_t phaseIncrements[kNumSources];
+			bool sourceActive[kNumSources];
 			for (int32_t s = 0; s < kNumSources; s++) {
 				phaseIncrements[s] = unisonParts[u].sources[s].phaseIncrementStoredValue;
+				sourceActive[s] = (sourceAmplitudes[s] != 0);
 			}
 
 			// If overall pitch adjusted...
@@ -1298,7 +1300,7 @@ skipAutoRelease: {}
 							goto skipUnisonPart;
 						}
 						else {
-							sourceAmplitudes[s] = 0; // For FM
+							sourceActive[s] = false; // For FM
 						}
 					}
 				}
@@ -1311,7 +1313,7 @@ skipAutoRelease: {}
 						goto skipUnisonPart;
 					}
 					else {
-						sourceAmplitudes[s] = 0; // For FM
+						sourceActive[s] = false; // For FM
 					}
 				}
 			}
@@ -1473,7 +1475,7 @@ cantBeDoingOscSyncForFirstOsc:
 					else {
 noModulatorsActive:
 						for (int32_t s = 0; s < kNumSources; s++) {
-							if (sourceAmplitudes[s]) {
+							if (sourceActive[s]) {
 								renderSineWaveWithFeedback(
 								    fmOscBuffer, numSamples, &unisonParts[u].sources[s].oscPos, sourceAmplitudesNow[s],
 								    phaseIncrements[s], paramFinalValues[params::LOCAL_CARRIER_0_FEEDBACK + s],
@@ -1487,7 +1489,7 @@ noModulatorsActive:
 
 				// Carriers
 				for (int32_t s = 0; s < kNumSources; s++) {
-					if (sourceAmplitudes[s]) {
+					if (sourceActive[s]) {
 						renderFMWithFeedbackAdd(
 						    fmOscBuffer, numSamples, spareRenderingBuffer[2], &unisonParts[u].sources[s].oscPos,
 						    sourceAmplitudesNow[s], phaseIncrements[s],
