@@ -5,20 +5,254 @@
  */
 
 #include "usb_sync.h"
+#include "fatfs/fatfs.hpp"
 #include "model/settings/runtime_feature_settings.h"
 #include "playback/playback_handler.h"
 #include "tusb.h"
+#include <cstring>
+#include <optional>
 
 namespace deluge::io::usb {
 
+enum class RxState { WaitMagicH, WaitMagicL, WaitHeader, WaitPayload, WaitChecksum };
+
+enum class TransferState { Idle, SendingFile };
+
+// RX Parser State variables
+static RxState rxState = RxState::WaitMagicH;
+static uint8_t rxBuffer[1024 + 10];
+static uint16_t rxIndex = 0;
+
+// TX File Transfer state
+static TransferState transferState = TransferState::Idle;
+static std::optional<FatFS::File> activeReadFile;
+static uint16_t activeChunkIndex = 0;
+
 void initUsbSync() {
-	// Initialization logic (if any)
+	rxState = RxState::WaitMagicH;
+	transferState = TransferState::Idle;
+	activeReadFile.reset();
 }
 
-void usbSyncTask() {
-	if (!runtimeFeatureSettings.isOn(RuntimeFeatureSettingType::UsbSerialSync)) {
+static void sendResponsePacket(uint8_t cmd, const uint8_t* payload, uint16_t len) {
+	uint8_t msg[1024 + 6];
+	msg[0] = 0xDE;
+	msg[1] = 0x4C;
+	msg[2] = cmd;
+	msg[3] = len & 0xFF;
+	msg[4] = (len >> 8) & 0xFF;
+
+	if (len > 0 && payload != nullptr) {
+		std::memcpy(&msg[5], payload, len);
+	}
+
+	uint8_t checksum = cmd ^ (len & 0xFF) ^ ((len >> 8) & 0xFF);
+	for (uint16_t i = 0; i < len; i++) {
+		checksum ^= payload[i];
+	}
+	msg[5 + len] = checksum;
+
+	tud_cdc_write(msg, len + 6);
+	tud_cdc_write_flush();
+}
+
+static void sendDirectoryListing(const char* path) {
+	auto dirResult = FatFS::Directory::open(path);
+	if (!dirResult) {
+		uint8_t errorMsg[1] = {0x01}; // status: 1 (error)
+		sendResponsePacket(0x03, errorMsg, 1);
 		return;
 	}
+
+	uint8_t txBuf[1024];
+	txBuf[0] = 0; // status: 0 (success)
+	uint16_t txIndex = 1;
+
+	while (true) {
+		auto fileInfoResult = dirResult->read();
+		if (!fileInfoResult || fileInfoResult->fname[0] == '\0') {
+			break;
+		}
+
+		bool isDir = (fileInfoResult->fattrib & AM_DIR) != 0;
+		uint8_t typeChar = isDir ? 'd' : 'f';
+		int nameLen = std::strlen(fileInfoResult->fname);
+
+		// Format: 'd' or 'f' followed by name, null-terminated
+		if (txIndex + nameLen + 2 < 1024) {
+			txBuf[txIndex++] = typeChar;
+			std::memcpy(&txBuf[txIndex], fileInfoResult->fname, nameLen);
+			txIndex += nameLen;
+			txBuf[txIndex++] = '\0';
+		}
+		else {
+			break;
+		}
+	}
+
+	sendResponsePacket(0x03, txBuf, txIndex);
+}
+
+static void startFileRead(const char* filePath) {
+	if (activeReadFile) {
+		activeReadFile->close();
+		activeReadFile.reset();
+	}
+
+	auto fileResult = FatFS::File::open(filePath, FA_READ);
+	if (!fileResult) {
+		uint8_t errPayload[5] = {2, 0, 0, 0, 0}; // status: 2 (error)
+		sendResponsePacket(0x05, errPayload, 5);
+		transferState = TransferState::Idle;
+		return;
+	}
+
+	activeReadFile = std::move(*fileResult);
+	activeChunkIndex = 0;
+	transferState = TransferState::SendingFile;
+}
+
+static void handleReceivedPacket(uint8_t cmd, uint8_t* payload, uint16_t len) {
+	if (cmd == 0x02) { // Request File List
+		char path[256];
+		if (len < sizeof(path)) {
+			std::memcpy(path, payload, len);
+			path[len] = '\0';
+			sendDirectoryListing(path);
+		}
+	}
+	else if (cmd == 0x04) { // Request File Read
+		char filePath[256];
+		if (len < sizeof(filePath)) {
+			std::memcpy(filePath, payload, len);
+			filePath[len] = '\0';
+			startFileRead(filePath);
+		}
+	}
+}
+
+static void processIncomingCdcData() {
+	uint32_t avail = tud_cdc_available();
+	if (avail == 0) {
+		return;
+	}
+
+	for (uint32_t i = 0; i < avail; i++) {
+		uint8_t b;
+		tud_cdc_read(&b, 1);
+
+		switch (rxState) {
+		case RxState::WaitMagicH:
+			if (b == 0xDE) {
+				rxBuffer[0] = b;
+				rxIndex = 1;
+				rxState = RxState::WaitMagicL;
+			}
+			break;
+
+		case RxState::WaitMagicL:
+			if (b == 0x4C) {
+				rxBuffer[1] = b;
+				rxIndex = 2;
+				rxState = RxState::WaitHeader;
+			}
+			else {
+				rxState = RxState::WaitMagicH;
+			}
+			break;
+
+		case RxState::WaitHeader:
+			rxBuffer[rxIndex++] = b;
+			if (rxIndex == 5) {
+				uint16_t len = rxBuffer[3] | (rxBuffer[4] << 8);
+				if (len > 1024) {
+					rxState = RxState::WaitMagicH;
+				}
+				else if (len > 0) {
+					rxState = RxState::WaitPayload;
+				}
+				else {
+					rxState = RxState::WaitChecksum;
+				}
+			}
+			break;
+
+		case RxState::WaitPayload:
+			rxBuffer[rxIndex++] = b;
+			{
+				uint16_t len = rxBuffer[3] | (rxBuffer[4] << 8);
+				if (rxIndex == (5 + len)) {
+					rxState = RxState::WaitChecksum;
+				}
+			}
+			break;
+
+		case RxState::WaitChecksum: {
+			uint8_t checksum = b;
+			uint8_t cmd = rxBuffer[2];
+			uint16_t len = rxBuffer[3] | (rxBuffer[4] << 8);
+
+			uint8_t calculatedChecksum = cmd ^ (len & 0xFF) ^ ((len >> 8) & 0xFF);
+			for (uint16_t idx = 0; idx < len; idx++) {
+				calculatedChecksum ^= rxBuffer[5 + idx];
+			}
+
+			if (checksum == calculatedChecksum) {
+				handleReceivedPacket(cmd, &rxBuffer[5], len);
+			}
+			rxState = RxState::WaitMagicH;
+		} break;
+		}
+	}
+}
+
+static void processOutgoingFileTransfer() {
+	if (transferState != TransferState::SendingFile || !activeReadFile) {
+		return;
+	}
+
+	uint8_t dataBuf[512];
+	std::span<std::byte> readSpan(reinterpret_cast<std::byte*>(dataBuf), sizeof(dataBuf));
+	auto readResult = activeReadFile->read(readSpan);
+
+	if (!readResult) {
+		uint8_t errPayload[5] = {2, (uint8_t)(activeChunkIndex & 0xFF), (uint8_t)((activeChunkIndex >> 8) & 0xFF), 0,
+		                         0};
+		sendResponsePacket(0x05, errPayload, 5);
+		activeReadFile->close();
+		activeReadFile.reset();
+		transferState = TransferState::Idle;
+		return;
+	}
+
+	uint16_t bytesRead = readResult->size();
+	bool isEof = activeReadFile->eof() || bytesRead < 512;
+	uint8_t status = isEof ? 1 : 0;
+
+	uint8_t txPayload[512 + 5];
+	txPayload[0] = status;
+	txPayload[1] = activeChunkIndex & 0xFF;
+	txPayload[2] = (activeChunkIndex >> 8) & 0xFF;
+	txPayload[3] = bytesRead & 0xFF;
+	txPayload[4] = (bytesRead >> 8) & 0xFF;
+
+	if (bytesRead > 0) {
+		std::memcpy(&txPayload[5], dataBuf, bytesRead);
+	}
+
+	sendResponsePacket(0x05, txPayload, bytesRead + 5);
+
+	if (isEof) {
+		activeReadFile->close();
+		activeReadFile.reset();
+		transferState = TransferState::Idle;
+	}
+	else {
+		activeChunkIndex++;
+	}
+}
+
+static void sendPlayheadSync() {
 	if (!tud_cdc_connected()) {
 		return;
 	}
@@ -38,11 +272,11 @@ void usbSyncTask() {
 		lastPlayState = playState;
 
 		uint8_t msg[15];
-		msg[0] = 0xDE; // Magic H
-		msg[1] = 0x4C; // Magic L
-		msg[2] = 0x01; // Cmd: Playhead Sync
-		msg[3] = 0x09; // Length L (9 bytes payload)
-		msg[4] = 0x00; // Length H
+		msg[0] = 0xDE;
+		msg[1] = 0x4C;
+		msg[2] = 0x01;
+		msg[3] = 0x09;
+		msg[4] = 0x00;
 
 		msg[5] = tick & 0xFF;
 		msg[6] = (tick >> 8) & 0xFF;
@@ -65,6 +299,24 @@ void usbSyncTask() {
 		tud_cdc_write(msg, 15);
 		tud_cdc_write_flush();
 	}
+}
+
+void usbSyncTask() {
+	if (!runtimeFeatureSettings.isOn(RuntimeFeatureSettingType::UsbSerialSync)) {
+		return;
+	}
+	if (!tud_cdc_connected()) {
+		if (activeReadFile) {
+			activeReadFile->close();
+			activeReadFile.reset();
+			transferState = TransferState::Idle;
+		}
+		return;
+	}
+
+	processIncomingCdcData();
+	processOutgoingFileTransfer();
+	sendPlayheadSync();
 }
 
 } // namespace deluge::io::usb
