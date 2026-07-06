@@ -30,25 +30,53 @@ void renderWave(const int16_t* __restrict__ table, int32_t tableSizeMagnitude, i
                 bool applyAmplitude, uint32_t phaseToAdd, int32_t amplitudeIncrement) {
 	int16x4_t const32767 = vdup_n_s16(32767);
 	int32_t* __restrict__ outputBufferPos = outputBuffer;
+	int32_t numSamples = bufferEnd - outputBuffer;
+	int32_t numVectorSamples = numSamples & ~3;
+	int32_t* vectorEnd = outputBuffer + numVectorSamples;
 
 	int32x4_t amplitudeVector = createAmplitudeVector(amplitude, amplitudeIncrement);
 	int32x4_t amplitudeIncrementVector = vdupq_n_s32(amplitudeIncrement << 1);
 	int32x4_t valueVector;
-	do {
+	if (outputBufferPos < vectorEnd) {
+		do {
+			std::tie(valueVector, phase) =
+			    waveRenderingFunctionGeneral(phase, phaseIncrement, phaseToAdd, table, tableSizeMagnitude);
+
+			if (applyAmplitude) {
+				int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+				valueVector = vqdmulhq_s32(amplitudeVector, valueVector);
+				amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
+				valueVector = vaddq_s32(valueVector, existingDataInBuffer);
+			}
+
+			vst1q_s32(outputBufferPos, valueVector);
+
+			outputBufferPos += 4;
+		} while (outputBufferPos < vectorEnd);
+	}
+
+	int32_t remainder = numSamples & 3;
+	if (remainder > 0) {
+		alignas(16) int32_t temp[4];
 		std::tie(valueVector, phase) =
 		    waveRenderingFunctionGeneral(phase, phaseIncrement, phaseToAdd, table, tableSizeMagnitude);
 
 		if (applyAmplitude) {
-			int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+			alignas(16) int32_t existingData[4] = {0};
+			for (int32_t i = 0; i < remainder; i++) {
+				existingData[i] = outputBufferPos[i];
+			}
+			int32x4_t existingDataVector = vld1q_s32(existingData);
 			valueVector = vqdmulhq_s32(amplitudeVector, valueVector);
-			amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
-			valueVector = vaddq_s32(valueVector, existingDataInBuffer);
+			valueVector = vaddq_s32(valueVector, existingDataVector);
 		}
 
-		vst1q_s32(outputBufferPos, valueVector);
-
-		outputBufferPos += 4;
-	} while (outputBufferPos < bufferEnd);
+		vst1q_s32(temp, valueVector);
+		for (int32_t i = 0; i < remainder; i++) {
+			outputBufferPos[i] = temp[i];
+		}
+		phase -= phaseIncrement * (4 - remainder);
+	}
 }
 
 /* Before calling, you must:
@@ -59,26 +87,54 @@ void renderPulseWave(const int16_t* __restrict__ table, int32_t tableSizeMagnitu
                      int32_t* __restrict__ outputBuffer, int32_t* bufferEnd, uint32_t phaseIncrement, uint32_t phase,
                      bool applyAmplitude, uint32_t phaseToAdd, int32_t amplitudeIncrement) {
 	int32_t* __restrict__ outputBufferPos = outputBuffer;
+	int32_t numSamples = bufferEnd - outputBuffer;
+	int32_t numVectorSamples = numSamples & ~3;
+	int32_t* vectorEnd = outputBuffer + numVectorSamples;
 
 	int32x4_t amplitudeVector = createAmplitudeVector(amplitude, amplitudeIncrement);
 	int32x4_t amplitudeIncrementVector = vdupq_n_s32(amplitudeIncrement << 1);
 	int32x4_t valueVector;
 
-	do {
+	if (outputBufferPos < vectorEnd) {
+		do {
+			std::tie(valueVector, phase) =
+			    waveRenderingFunctionPulse(phase, phaseIncrement, phaseToAdd, table, tableSizeMagnitude);
+
+			if (applyAmplitude) {
+				int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+				valueVector = vqdmulhq_s32(amplitudeVector, valueVector);
+				amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
+				valueVector = vaddq_s32(valueVector, existingDataInBuffer);
+			}
+
+			vst1q_s32(outputBufferPos, valueVector);
+
+			outputBufferPos += 4;
+		} while (outputBufferPos < vectorEnd);
+	}
+
+	int32_t remainder = numSamples & 3;
+	if (remainder > 0) {
+		alignas(16) int32_t temp[4];
 		std::tie(valueVector, phase) =
 		    waveRenderingFunctionPulse(phase, phaseIncrement, phaseToAdd, table, tableSizeMagnitude);
 
 		if (applyAmplitude) {
-			int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+			alignas(16) int32_t existingData[4] = {0};
+			for (int32_t i = 0; i < remainder; i++) {
+				existingData[i] = outputBufferPos[i];
+			}
+			int32x4_t existingDataVector = vld1q_s32(existingData);
 			valueVector = vqdmulhq_s32(amplitudeVector, valueVector);
-			amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
-			valueVector = vaddq_s32(valueVector, existingDataInBuffer);
+			valueVector = vaddq_s32(valueVector, existingDataVector);
 		}
 
-		vst1q_s32(outputBufferPos, valueVector);
-
-		outputBufferPos += 4;
-	} while (outputBufferPos < bufferEnd);
+		vst1q_s32(temp, valueVector);
+		for (int32_t i = 0; i < remainder; i++) {
+			outputBufferPos[i] = temp[i];
+		}
+		phase -= phaseIncrement * (4 - remainder);
+	}
 }
 
 uint32_t renderCrudeSawWaveWithAmplitude(int32_t* thisSample, int32_t* bufferEnd, uint32_t phaseNowNow,

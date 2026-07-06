@@ -509,23 +509,48 @@ callRenderWave:
 }
 void Oscillator::applyAmplitudeVectorToBuffer(int32_t amplitude, int32_t numSamples, int32_t amplitudeIncrement,
                                               int32_t* outputBufferPos, int32_t* inputBuferPos) {
-	int32_t const* const bufferEnd = outputBufferPos + numSamples;
+	int32_t numVectorSamples = numSamples & ~3;
+	int32_t const* const vectorEnd = outputBufferPos + numVectorSamples;
 
 	int32x4_t amplitudeVector = createAmplitudeVector(amplitude, amplitudeIncrement);
 	int32x4_t amplitudeIncrementVector = vdupq_n_s32(amplitudeIncrement << 1);
 
-	do {
-		int32x4_t waveDataFromBefore = vld1q_s32(inputBuferPos);
-		int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+	if (outputBufferPos < vectorEnd) {
+		do {
+			int32x4_t waveDataFromBefore = vld1q_s32(inputBuferPos);
+			int32x4_t existingDataInBuffer = vld1q_s32(outputBufferPos);
+			int32x4_t dataWithAmplitudeApplied = vqdmulhq_s32(amplitudeVector, waveDataFromBefore);
+			amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
+			int32x4_t sum = vaddq_s32(dataWithAmplitudeApplied, existingDataInBuffer);
+
+			vst1q_s32(outputBufferPos, sum);
+
+			outputBufferPos += 4;
+			inputBuferPos += 4;
+		} while (outputBufferPos < vectorEnd);
+	}
+
+	int32_t remainder = numSamples & 3;
+	if (remainder > 0) {
+		alignas(16) int32_t tempInput[4] = {0};
+		alignas(16) int32_t tempOutput[4] = {0};
+		alignas(16) int32_t existingData[4] = {0};
+
+		for (int32_t i = 0; i < remainder; i++) {
+			tempInput[i] = inputBuferPos[i];
+			existingData[i] = outputBufferPos[i];
+		}
+
+		int32x4_t waveDataFromBefore = vld1q_s32(tempInput);
+		int32x4_t existingDataInBuffer = vld1q_s32(existingData);
 		int32x4_t dataWithAmplitudeApplied = vqdmulhq_s32(amplitudeVector, waveDataFromBefore);
-		amplitudeVector = vaddq_s32(amplitudeVector, amplitudeIncrementVector);
 		int32x4_t sum = vaddq_s32(dataWithAmplitudeApplied, existingDataInBuffer);
 
-		vst1q_s32(outputBufferPos, sum);
-
-		outputBufferPos += 4;
-		inputBuferPos += 4;
-	} while (outputBufferPos < bufferEnd);
+		vst1q_s32(tempOutput, sum);
+		for (int32_t i = 0; i < remainder; i++) {
+			outputBufferPos[i] = tempOutput[i];
+		}
+	}
 }
 void Oscillator::maybeStorePhase(const OscType& type, uint32_t* startPhase, uint32_t phase, bool doPulseWave) {
 	if (!(doPulseWave && type != OscType::SQUARE)) {
