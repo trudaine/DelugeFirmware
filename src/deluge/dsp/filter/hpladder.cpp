@@ -67,6 +67,9 @@ q31_t HpLadderFilter::setConfig(q31_t hpfFrequency, q31_t hpfResonance, FilterMo
 	return filterGain;
 }
 [[gnu::hot]] void HpLadderFilter::doFilter(q31_t* startSample, q31_t* endSample, int32_t sampleIncrement) {
+	if (startSample >= endSample) {
+		return;
+	}
 	q31_t* currentSample = startSample;
 	do {
 		*currentSample = doHPF(*currentSample, l);
@@ -75,6 +78,9 @@ q31_t HpLadderFilter::setConfig(q31_t hpfFrequency, q31_t hpfResonance, FilterMo
 }
 // filter an interleaved stereo buffer
 [[gnu::hot]] void HpLadderFilter::doFilterStereo(q31_t* startSample, q31_t* endSample) {
+	if (startSample >= endSample) {
+		return;
+	}
 	q31_t* currentSample = startSample;
 	do {
 		*currentSample = doHPF(*currentSample, l);

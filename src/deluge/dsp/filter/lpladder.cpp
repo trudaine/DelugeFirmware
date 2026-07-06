@@ -172,6 +172,9 @@ q31_t LpLadderFilter::setConfig(q31_t lpfFrequency, q31_t lpfResonance, FilterMo
 }
 
 [[gnu::hot]] void LpLadderFilter::doFilter(q31_t* startSample, q31_t* endSample, int32_t sampleIncrement) {
+	if (startSample >= endSample) {
+		return;
+	}
 
 	// Half ladder
 	if (lpfMode == FilterMode::TRANSISTOR_12DB) {
@@ -240,6 +243,9 @@ q31_t LpLadderFilter::setConfig(q31_t lpfFrequency, q31_t lpfResonance, FilterMo
 	}
 }
 [[gnu::hot]] void LpLadderFilter::doFilterStereo(q31_t* startSample, q31_t* endSample) {
+	if (startSample >= endSample) {
+		return;
+	}
 
 	// Half ladder
 	if (lpfMode == FilterMode::TRANSISTOR_12DB) {
