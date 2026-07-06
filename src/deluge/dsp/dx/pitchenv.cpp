@@ -75,7 +75,11 @@ void PitchEnv::advance(const EnvParams& p, int newix) {
 		int newlevel = p.levels[ix_];
 		targetlevel_ = pitchenv_tab[newlevel] << 19;
 		rising_ = (targetlevel_ > level_);
-		inc_ = pitchenv_rate[p.rates[ix_]] * unit_;
+		int rateIndex = p.rates[ix_];
+		if (rateIndex > 99) {
+			rateIndex = 99;
+		}
+		inc_ = pitchenv_rate[rateIndex] * unit_;
 	}
 }
 

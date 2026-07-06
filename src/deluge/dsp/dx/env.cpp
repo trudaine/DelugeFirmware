@@ -114,6 +114,9 @@ void Env::advance(const EnvParams& p, int newix, int extra_rate) {
 		int qrate = (p.rates[ix_] * 41) >> 6;
 		qrate += rate_scaling_ + extra_rate;
 		qrate = min(qrate, 63);
+		if (qrate < 0) {
+			qrate = 0;
+		}
 
 #ifdef ACCURATE_ENVELOPE
 		if (targetlevel_ == level_ || (ix_ == 0 && newlevel == 0)) {
@@ -123,6 +126,9 @@ void Env::advance(const EnvParams& p, int newix, int extra_rate) {
 			int staticrate = p.rates[ix_];
 			staticrate += rate_scaling_ + extra_rate; // needs to be checked, as well, but seems correct
 			staticrate = min(staticrate, 99);
+			if (staticrate < 0) {
+				staticrate = 0;
+			}
 			staticcount_ = staticrate < 77 ? statics[staticrate] : 20 * (99 - staticrate);
 			if (staticrate < 77 && (ix_ == 0 && newlevel == 0)) {
 				staticcount_ /= 20; // attack is scaled faster
