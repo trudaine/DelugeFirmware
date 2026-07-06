@@ -106,8 +106,18 @@ void Debug::sysexReceived(MIDICable& cable, uint8_t* data, int32_t len) {
 		break;
 
 	case 5:
-		// DSP golden-buffer tap: arm at the next note onset (onset-synced attack capture).
+		// DSP golden-buffer tap: arm MASTER at the next note onset (onset-synced attack capture).
 		DspTap::armOnNextNote();
+		break;
+
+	case 6:
+		// DSP golden-buffer tap: arm MODULATOR amplitude at the next note onset (per-block envelope).
+		DspTap::armModulatorOnNextNote();
+		break;
+
+	case 7:
+		// DSP golden-buffer tap: freeze capture (read the partial per-block modulator buffer).
+		DspTap::stop();
 		break;
 
 	default:

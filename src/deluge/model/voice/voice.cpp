@@ -1082,6 +1082,8 @@ skipAutoRelease: {}
 					                                  / numSamples;
 				}
 			}
+			// debug-only (trudaine fork): per-block modulator-0 amplitude for the golden-buffer tap.
+			DspTap::captureModulator(paramFinalValues[params::LOCAL_MODULATOR_0_VOLUME]);
 		}
 	}
 

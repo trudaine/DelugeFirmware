@@ -6,33 +6,52 @@
 namespace DspTap {
 
 static int32_t g_buf[kMaxSamples];
-static volatile int32_t g_remaining = 0; // samples still to capture (0 = idle/done)
+static volatile int32_t g_remaining = 0; // entries still to capture (0 = idle/done/stopped)
 static int32_t g_writePos = 0;
-static int32_t g_captured = 0;                // samples captured since last arm
-static volatile bool g_armOnNextNote = false; // arm at the next note onset
+static int32_t g_captured = 0;           // entries captured since last arm
+static volatile int g_source = 0;        // 0 = master (per-sample), 1 = modulator (per-block)
+static volatile int g_armOnNextNote = 0; // 0 = no, 1 = master, 2 = modulator
 
-void arm() {
+static void armInternal(int source) {
 	g_writePos = 0;
 	g_captured = 0;
+	g_source = source;
 	g_remaining = kMaxSamples;
 }
 
+void arm() {
+	armInternal(0);
+}
+
 void armOnNextNote() {
-	g_armOnNextNote = true;
+	g_armOnNextNote = 1;
+	g_captured = 0;
+	g_remaining = 0;
+}
+
+void armModulatorOnNextNote() {
+	g_armOnNextNote = 2;
+	g_captured = 0;
+	g_remaining = 0;
+}
+
+void stop() {
+	g_remaining = 0;
 }
 
 void onNoteStart() {
-	if (g_armOnNextNote) {
-		g_armOnNextNote = false;
-		arm();
+	int a = g_armOnNextNote;
+	if (a) {
+		g_armOnNextNote = 0;
+		armInternal(a == 2 ? 1 : 0);
 	}
 }
 
 void capture(std::span<StereoSample> buffer) {
-	int32_t rem = g_remaining;
-	if (rem <= 0) {
+	if (g_source != 0 || g_remaining <= 0) {
 		return;
 	}
+	int32_t rem = g_remaining;
 	int32_t pos = g_writePos;
 	for (StereoSample& s : buffer) {
 		if (rem <= 0) {
@@ -44,6 +63,15 @@ void capture(std::span<StereoSample> buffer) {
 	g_writePos = pos;
 	g_captured = pos;
 	g_remaining = rem;
+}
+
+void captureModulator(int32_t modAmp) {
+	if (g_source != 1 || g_remaining <= 0) {
+		return;
+	}
+	g_buf[g_writePos++] = modAmp;
+	g_captured = g_writePos;
+	g_remaining = g_remaining - 1;
 }
 
 int32_t capturedCount() {
