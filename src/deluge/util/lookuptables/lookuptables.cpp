@@ -503,14 +503,27 @@ const bool noteCodeIsSharp[12] = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};
  *   This iterance is Custom and will read as "5 and 6, of 6". Iterance value is 0x0630
  */
 
-const std::array<Iterance, 35> iterancePresets = {
+const std::array<Iterance, kNumIterancePresets> iterancePresets = {
 	Iterance{2, 0b1}, Iterance{2, 0b10},
 	Iterance{3, 0b1}, Iterance{3, 0b10}, Iterance{3, 0b100},
 	Iterance{4, 0b1}, Iterance{4, 0b10}, Iterance{4, 0b100}, Iterance{4, 0b1000},
 	Iterance{5, 0b1}, Iterance{5, 0b10}, Iterance{5, 0b100}, Iterance{5, 0b1000}, Iterance{5, 0b10000},
 	Iterance{6, 0b1}, Iterance{6, 0b10}, Iterance{6, 0b100}, Iterance{6, 0b1000}, Iterance{6, 0b10000}, Iterance{6, 0b100000},
 	Iterance{7, 0b1}, Iterance{7, 0b10}, Iterance{7, 0b100}, Iterance{7, 0b1000}, Iterance{7, 0b10000}, Iterance{7, 0b100000}, Iterance{7, 0b1000000},
-	Iterance{8, 0b1}, Iterance{8, 0b10}, Iterance{8, 0b100}, Iterance{8, 0b1000}, Iterance{8, 0b10000}, Iterance{8, 0b100000}, Iterance{8, 0b1000000}, Iterance{8, 0b10000000}
+	Iterance{8, 0b1}, Iterance{8, 0b10}, Iterance{8, 0b100}, Iterance{8, 0b1000}, Iterance{8, 0b10000}, Iterance{8, 0b100000}, Iterance{8, 0b1000000}, Iterance{8, 0b10000000},
+	// 33 skip-N presets:
+	// Divisor 3
+	Iterance{3, 0b110}, Iterance{3, 0b101}, Iterance{3, 0b011},
+	// Divisor 4
+	Iterance{4, 0b1110}, Iterance{4, 0b1101}, Iterance{4, 0b1011}, Iterance{4, 0b0111},
+	// Divisor 5
+	Iterance{5, 0b11110}, Iterance{5, 0b11101}, Iterance{5, 0b11011}, Iterance{5, 0b10111}, Iterance{5, 0b01111},
+	// Divisor 6
+	Iterance{6, 0b111110}, Iterance{6, 0b111101}, Iterance{6, 0b111011}, Iterance{6, 0b110111}, Iterance{6, 0b101111}, Iterance{6, 0b011111},
+	// Divisor 7
+	Iterance{7, 0b1111110}, Iterance{7, 0b1111101}, Iterance{7, 0b1111011}, Iterance{7, 0b1110111}, Iterance{7, 0b1101111}, Iterance{7, 0b1011111}, Iterance{7, 0b0111111},
+	// Divisor 8
+	Iterance{8, 0b11111110}, Iterance{8, 0b11111101}, Iterance{8, 0b11111011}, Iterance{8, 0b11110111}, Iterance{8, 0b11101111}, Iterance{8, 0b11011111}, Iterance{8, 0b10111111}, Iterance{8, 0b01111111}
 	};
 
 // CHORD TYPES

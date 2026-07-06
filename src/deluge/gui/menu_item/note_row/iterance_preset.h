@@ -113,14 +113,34 @@ private:
 		}
 		else {
 			Iterance iterance = iterancePresets[iterancePreset - 1];
-			int32_t i = iterance.divisor;
-			for (; i >= 0; i--) {
-				// try to find which iteration step index is active
-				if (iterance.iteranceStep[i]) {
-					break;
+			if (iterance.divisor > 2 && iterance.iteranceStep.count() == (size_t)(iterance.divisor - 1)) {
+				int32_t skipIndex = 0;
+				for (int32_t i = 0; i < iterance.divisor; i++) {
+					if (!iterance.iteranceStep[i]) {
+						skipIndex = i;
+						break;
+					}
+				}
+				if (format.find("of") != std::string::npos) {
+					sprintf(buffer, "!%d of %d", skipIndex + 1, iterance.divisor);
+				}
+				else if (format.find(":") != std::string::npos) {
+					sprintf(buffer, "!%d:%d", skipIndex + 1, iterance.divisor);
+				}
+				else {
+					sprintf(buffer, "!%dof%d", skipIndex + 1, iterance.divisor);
 				}
 			}
-			sprintf(buffer, format.data(), i + 1, iterance.divisor);
+			else {
+				int32_t i = iterance.divisor;
+				for (; i >= 0; i--) {
+					// try to find which iteration step index is active
+					if (iterance.iteranceStep[i]) {
+						break;
+					}
+				}
+				sprintf(buffer, format.data(), i + 1, iterance.divisor);
+			}
 		}
 
 		return std::string(buffer);
