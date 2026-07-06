@@ -912,16 +912,8 @@ extern "C" bool yieldingRoutineWithTimeoutForSD(RunCondition until, double timeo
 		return false;
 	}
 	auto timeNow = getSystemTime();
-	// We lock this to prevent multiple entry. Otherwise we could get SD -> routineForSD() -> AudioEngine::routine() ->
-	// USB -> routineForSD()
 	if (sdRoutineLock) {
-		// busy wait - matches running sdroutine in a loop while checking for condition
-		while (!until()) {
-			if (getSystemTime() > timeNow + timeoutSeconds) {
-				return false;
-			}
-		}
-		return true;
+		return yieldWithTimeout(until, timeoutSeconds);
 	}
 	sdRoutineLock = true;
 	bool ret = yieldWithTimeout(until, timeoutSeconds);
@@ -934,13 +926,8 @@ extern "C" void yieldingRoutineForSD(RunCondition until) {
 		return;
 	}
 
-	// We lock this to prevent multiple entry. Otherwise we could get SD -> routineForSD() -> AudioEngine::routine() ->
-	// USB -> routineForSD()
 	if (sdRoutineLock) {
-		// busy wait - matches running sdroutine in a loop while checking for condition
-		while (!until()) {
-			asm volatile("nop");
-		}
+		yieldToIdle(until);
 		return;
 	}
 	sdRoutineLock = true;
