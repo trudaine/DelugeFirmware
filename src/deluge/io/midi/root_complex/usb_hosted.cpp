@@ -21,6 +21,7 @@
 #include "io/debug/log.h"
 #include "io/midi/midi_device_manager.h"
 #include "io/midi/midi_engine.h"
+#include "timers_interrupts/timers_interrupts.h" // CriticalSectionGuard
 
 using namespace deluge::io::usb;
 
@@ -146,6 +147,9 @@ void flushUSBMIDIToHostedDevice(int32_t ip, int32_t d, bool resume) {
 }
 
 void MIDIRootComplexUSBHosted::flush() {
+	// make sure the interrupt doesn't fire mid flush (forward-ported from main's
+	// MidiEngine::flushUSBMIDIOutput; added after this code was moved to the root complex)
+	CriticalSectionGuard guard;
 	if (usbLock) {
 		return;
 	}
