@@ -30,12 +30,15 @@ public:
 		switch (m) {
 		case Model::FREEVERB:
 			reverb_.emplace<reverb::Freeverb>();
+			base_ = &reverb_as<reverb::Freeverb>();
 			break;
 		case Model::DIGITAL:
 			reverb_.emplace<reverb::Digital>();
+			base_ = &reverb_as<reverb::Digital>();
 			break;
 		case Model::MUTABLE:
 			reverb_.emplace<reverb::Mutable>();
+			base_ = &reverb_as<reverb::Mutable>();
 			break;
 		}
 		base_->setRoomSize(room_size_);
