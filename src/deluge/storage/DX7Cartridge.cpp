@@ -153,6 +153,10 @@ constexpr T clearTopBit(T b) {
 // For details on the DX7 SYSEX specification, please see contrib/sysex-format.txt
 
 void DX7Cartridge::unpackProgram(std::span<std::uint8_t> unpackPgm, size_t idx) {
+	if (unpackPgm.size() < 155) {
+		return;
+	}
+
 	if (!isCartridge()) {
 		std::memcpy(unpackPgm.data(), &voiceData[6], 155);
 		return;
