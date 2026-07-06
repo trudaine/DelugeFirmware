@@ -47,6 +47,7 @@ class GranularProcessor {
 public:
 	GranularProcessor();
 	GranularProcessor(const GranularProcessor& other); // copy constructor
+	GranularProcessor& operator=(const GranularProcessor&) = delete;
 	~GranularProcessor();
 	[[nodiscard]] int32_t getSamplesToShutdown() const { return wrapsToShutdown * kModFXGrainBufferSize; }
 

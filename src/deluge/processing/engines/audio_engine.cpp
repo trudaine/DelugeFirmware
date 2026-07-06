@@ -797,7 +797,9 @@ startAgain:
 }
 
 void feedReverbBackdoorForGrain(int index, q31_t value) {
-	reverbMemory[index] += value;
+	if (index >= 0 && index < (int)reverbMemory.size()) {
+		reverbMemory[index] += value;
+	}
 }
 void renderReverb(size_t numSamples) {
 	std::span renderingBuffer{renderingMemory.data(), numSamples};
