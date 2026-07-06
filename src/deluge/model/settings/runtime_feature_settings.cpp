@@ -200,6 +200,9 @@ void RuntimeFeatureSettings::init() {
 	SetupOnOffSetting(settings[RuntimeFeatureSettingType::ShowBatteryLevel],
 	                  STRING_FOR_COMMUNITY_FEATURE_SHOW_BATTERY_LEVEL, "showBatteryLevel",
 	                  RuntimeFeatureStateToggle::On);
+	// USB Serial Sync
+	SetupOnOffSetting(settings[RuntimeFeatureSettingType::UsbSerialSync], STRING_FOR_COMMUNITY_FEATURE_USB_SERIAL_SYNC,
+	                  "usbSerialSync", RuntimeFeatureStateToggle::On);
 }
 
 void RuntimeFeatureSettings::readSettingsFromFile() {
